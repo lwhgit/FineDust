@@ -172,9 +172,18 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                     // Toast.makeText(MainActivity.this, "" + position, Toast.LENGTH_SHORT).show();
-                    Toast.makeText(MainActivity.this, "연결 시도", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "연결 시도 Secure", Toast.LENGTH_SHORT).show();
                     bluetoothManager.stopDiscovery();
-                    bluetoothManager.connect(deviceList.get(position));
+                    bluetoothManager.connect(deviceList.get(position), true);
+                }
+            });
+            deviceListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+                @Override
+                public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                    Toast.makeText(MainActivity.this, "연결 시도 Insecure", Toast.LENGTH_SHORT).show();
+                    bluetoothManager.stopDiscovery();
+                    bluetoothManager.connect(deviceList.get(position), false);
+                    return true;
                 }
             });
             
@@ -267,6 +276,8 @@ public class MainActivity extends AppCompatActivity {
             convertView = li.inflate(R.layout.list_device, null);
             TextView deviceNameView = (TextView) convertView.findViewById(R.id.deviceNameView);
             deviceNameView.setText(device.getName());
+            TextView deviceAddressView = (TextView) convertView.findViewById(R.id.deviceAddressView);
+            deviceAddressView.setText(device.getAddress());
             
             return convertView;
         }
