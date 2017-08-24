@@ -46,6 +46,7 @@ public class BluetoothManager {
     }
 
     public void enable() {
+        mainActivity.iLog("Request on bluetooth.");
         Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
         mainActivity.startActivityForResult(intent, BluetoothManager.REQUEST_BLUETOOTH_ENABLE);
     }
@@ -62,12 +63,15 @@ public class BluetoothManager {
                 if (BluetoothDevice.ACTION_FOUND.equals(intent.getAction())) {
                     BluetoothDevice searchedDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                     bluetoothListener.onDeviceFound(searchedDevice);
+                    mainActivity.iLog("Found Device : " + searchedDevice.getName());
                 } else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(intent.getAction())) {
                     close();
                     bluetoothListener.onDeviceDisconnected();
+                    mainActivity.iLog("Disconnected with device.");
                 } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(intent.getAction())) {
                     if (bluetoothListener != null)
                         bluetoothListener.onDiscoveryFinished();
+                    mainActivity.iLog("Discovering was finished.");
                 }
             }
         };
@@ -78,10 +82,12 @@ public class BluetoothManager {
         mainActivity.registerReceiver(broadcastReceiver, intentFilter);
         
         bluetoothAdapter.startDiscovery();
+        mainActivity.iLog("Started discovering.");
     }
     
     public void stopDiscovery() {
         bluetoothAdapter.cancelDiscovery();
+        mainActivity.iLog("Canceled discovering.");
     }
     
     public void connect(BluetoothDevice device, boolean secure) {
@@ -91,12 +97,14 @@ public class BluetoothManager {
         
         connectThread = new ConnectThread(device, secure);
         connectThread.start();
+        mainActivity.iLog("Try connecting.");
     }
     
     public void close() {
         if (connectThread != null) {
             connectThread.close();
             connectThread = null;
+            mainActivity.iLog("Bluetooth closed.");
         }
     }
     
@@ -111,6 +119,7 @@ public class BluetoothManager {
     public class BluetoothException extends Exception {
         public BluetoothException(String str) {
             super(str);
+            mainActivity.wLog(str);
         }
     }
 
@@ -133,12 +142,16 @@ public class BluetoothManager {
             BluetoothSocket tmp = null;
             
             try {
-                if (secure)
+                if (secure) {
                     tmp = device.createRfcommSocketToServiceRecord(UUID_SPP);
-                else if (!secure)
+                    mainActivity.iLog("Get socket. type: secure");
+                } else if (!secure) {
                     tmp = device.createInsecureRfcommSocketToServiceRecord(UUID_SPP);
+                    mainActivity.iLog("Get socket. type: insecure");
+                }
             } catch (IOException e) {
                 e.printStackTrace();
+                mainActivity.wLog("IOException in BluetoothManager/ConnectThread/Constructor\n" + e.getMessage());
             }
             socket = tmp;
         }
@@ -147,10 +160,14 @@ public class BluetoothManager {
         public void run() {
             try {
                 socket.connect();
+                mainActivity.iLog("Connecting to socket.");
             } catch (IOException connectException) {
+                mainActivity.wLog("IOException in BluetoothManager/ConnectThread/run try1\n" + connectException.getMessage());
                 try {
                     socket.close();
-                } catch (IOException closeException) { }
+                } catch (IOException closeException) {
+                    mainActivity.wLog("IOException in BluetoothManager/ConnectThread/run try2\n" + closeException.getMessage());
+                }
             }
             
             mainActivity.runOnUiThread(new Runnable() {
@@ -160,10 +177,13 @@ public class BluetoothManager {
                 }
             });
             
+            mainActivity.iLog("Connected with " + device.getName());
+            
             try {
                 inputStream = socket.getInputStream();
             } catch (IOException e) {
                 e.printStackTrace();
+                mainActivity.wLog("IOException in BluetoothManager/ConnectThread/run try3\n" + e.getMessage());
                 return;
             }
             
@@ -178,7 +198,9 @@ public class BluetoothManager {
                         }
                     });
                 } catch (IOException e) {
+                    mainActivity.wLog("IOException in BluetoothManager/ConnectThread/run try4\n" + e.getMessage());
                     e.printStackTrace();
+                    break;
                 }
             }
         }
@@ -186,7 +208,8 @@ public class BluetoothManager {
         public void close() {
             try {
                 socket.close();
-            } catch (IOException closeException) { }
+            } catch (IOException closeException) {
+                mainActivity.wLog("IOException in BluetoothManager/ConnectThread/close\n" + closeException.getMessage());}
             
             mainActivity.runOnUiThread(new Runnable() {
                 @Override

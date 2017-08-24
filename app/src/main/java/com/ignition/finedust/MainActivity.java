@@ -1,21 +1,22 @@
 package com.ignition.finedust;
 
 import android.Manifest;
-import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
-import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
+import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -24,7 +25,9 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Switch;
@@ -55,6 +58,10 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<BluetoothDevice> deviceList = null;
     private DeviceArrayAdapter deviceArrayAdapter = null;
 
+    private LinearLayout logLayout = null;
+    private ImageButton logCloseBtn = null;
+    private EditText logView = null;
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -134,8 +141,33 @@ public class MainActivity extends AppCompatActivity {
 
     private void init() {
         dataView = (TextView) findViewById(R.id.dataView);
+        dataView.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                logLayout.setVisibility(View.VISIBLE);
+                return false;
+            }
+        });
         stateView = (TextView) findViewById(R.id.stateView);
+        dataView.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                logLayout.setVisibility(View.VISIBLE);
+                return false;
+            }
+        });
         deviceView = (TextView) findViewById(R.id.deviceView);
+        
+        logLayout = (LinearLayout) findViewById(R.id.logLayout);
+        logCloseBtn = (ImageButton) findViewById(R.id.logCloseBtn);
+        logCloseBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                logLayout.setVisibility(View.INVISIBLE);
+            }
+        });
+        logView = (EditText) findViewById(R.id.logView);
+        logView.setHorizontallyScrolling(true);
     }
 
     private void openBluetooth() {
@@ -256,6 +288,28 @@ public class MainActivity extends AppCompatActivity {
         }
 
         bluetoothDialog.show();
+    }
+    
+    public void iLog(String s) {
+        SpannableString ss = new SpannableString(s);
+        ss.setSpan(new ForegroundColorSpan(Color.BLUE),0,s.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        log(ss);
+    }
+    
+    public void wLog(String s) {
+        SpannableString ss = new SpannableString(s);
+        ss.setSpan(new ForegroundColorSpan(Color.RED),0,s.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        log(ss);
+    }
+    
+    public void log(final SpannableString ss) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                logView.append(ss);
+                logView.append("\n");
+            }
+        });
     }
     
     private class DeviceArrayAdapter extends ArrayAdapter<BluetoothDevice> {
